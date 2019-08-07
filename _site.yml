@@ -6,6 +6,6 @@ navbar:
     - text: "General Information"
       href: index.html
     - text: "Tutorial"
-      href: speed-and-distance.html 
+      href: 16S-rRNA-pipeline-using-DADA2.html
 output:
   html_document:
