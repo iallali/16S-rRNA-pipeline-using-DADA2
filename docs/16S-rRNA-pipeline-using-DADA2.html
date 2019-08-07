@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Instructors: Imane Allali" />
+
+
+<title>16S-rRNA-pipeline-using-DADA2</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">16S Tutorial</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">General Information</a>
+</li>
+<li>
+  <a href="speed-and-distance.html">Tutorial</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">16S-rRNA-pipeline-using-DADA2</h1>
+<h4 class="author">Instructors: Imane Allali</h4>
+
+</div>
+
+
+<p><br/><br/></p>
+<div id="general-information" class="section level2">
+<h2><span style="color:green">General Information</span></h2>
+<p>The material of taught in this module was developed by <a href="https://github.com/benjjneb">Benjamin Callahan</a>.</p>
+<p><strong>Who</strong> : The course is aimed at Master, PhD students, and other researchers.</p>
+<p><strong>When</strong> : beginning of September 2019.</p>
+<p><strong>Requirements</strong>: Participants must have access to R or RStudio via their own computer or cluster. git status <strong>Contact</strong> : Please email <a href="mailto:allali.imane@gmail.com" class="email">allali.imane@gmail.com</a> for more information. <br/><br/></p>
+<div id="prerequisities" class="section level4">
+<h4>Prerequisities</h4>
+<p>You should have your access to R and RStudio via your own compute or cluster. <br/><br/></p>
+</div>
+<div id="outcomes" class="section level4">
+<h4>Outcomes</h4>
+<ol style="list-style-type: decimal">
+<li></li>
+<li></li>
+<li><br/><br/></li>
+</ol>
+</div>
+<div id="when-you-get-lost-or-something-is-unclear" class="section level4">
+<h4>When you get lost or something is unclear</h4>
+<ol style="list-style-type: decimal">
+<li>Please find someone next to you that looks like they know what they are doing.</li>
+<li>Ask the teacher assistant.</li>
+<li>Let me know. <br/><br/></li>
+</ol>
+</div>
+</div>
+<div id="the-dataset" class="section level2">
+<h2><span style="color:green">The dataset</span></h2>
+<p>The dataset we will be working are the practice dataset from the <a href="https://h3abionet.github.io/H3ABionet-SOPs/16s-rRNA-1-0.html">H3ABioNet 16S rDNA diversity analysis SOP</a>. The source data can be accessed <a href="http://h3data.cbio.uct.ac.za/assessments/16SrRNADiversityAnalysis/practice">here</a> but for our purposes it is already on the cluster.</p>
+<p>The table below contains the metadata associated with the dog stool samples. There are three dogs which are treated with increased percentage of a compound in their diet: 5 different treatments (0-4, representing an increased percentage of a compound in their diet).</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Sample</th>
+<th align="center">Dog</th>
+<th align="center">Treatment</th>
+<th align="center">Read Counts r1</th>
+<th align="right">Read Counts r2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Dog1</td>
+<td align="center">B</td>
+<td align="center">2</td>
+<td align="center">118343</td>
+<td align="right">118343</td>
+</tr>
+<tr class="even">
+<td align="left">Dog2</td>
+<td align="center">G</td>
+<td align="center">3</td>
+<td align="center">108679</td>
+<td align="right">108679</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog3</td>
+<td align="center">K</td>
+<td align="center">3</td>
+<td align="center">101482</td>
+<td align="right">101482</td>
+</tr>
+<tr class="even">
+<td align="left">Dog8</td>
+<td align="center">B</td>
+<td align="center">4</td>
+<td align="center">108731</td>
+<td align="right">108731</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog9</td>
+<td align="center">G</td>
+<td align="center">0</td>
+<td align="center">109500</td>
+<td align="right">109500</td>
+</tr>
+<tr class="even">
+<td align="left">Dog10</td>
+<td align="center">K</td>
+<td align="center">4</td>
+<td align="center">79342</td>
+<td align="right">79342</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog15</td>
+<td align="center">B</td>
+<td align="center">1</td>
+<td align="center">131483</td>
+<td align="right">131483</td>
+</tr>
+<tr class="even">
+<td align="left">Dog16</td>
+<td align="center">G</td>
+<td align="center">4</td>
+<td align="center">114424</td>
+<td align="right">114424</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog17</td>
+<td align="center">K</td>
+<td align="center">0</td>
+<td align="center">99610</td>
+<td align="right">99610</td>
+</tr>
+<tr class="even">
+<td align="left">Dog22</td>
+<td align="center">B</td>
+<td align="center">3</td>
+<td align="center">145029</td>
+<td align="right">145029</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog23</td>
+<td align="center">G</td>
+<td align="center">1</td>
+<td align="center">193158</td>
+<td align="right">193158</td>
+</tr>
+<tr class="even">
+<td align="left">Dog24</td>
+<td align="center">K</td>
+<td align="center">2</td>
+<td align="center">162487</td>
+<td align="right">162487</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog29</td>
+<td align="center">B</td>
+<td align="center">0</td>
+<td align="center">122776</td>
+<td align="right">122776</td>
+</tr>
+<tr class="even">
+<td align="left">Dog30</td>
+<td align="center">G</td>
+<td align="center">2</td>
+<td align="center">137315</td>
+<td align="right">137315</td>
+</tr>
+<tr class="odd">
+<td align="left">Dog31</td>
+<td align="center">K</td>
+<td align="center">1</td>
+<td align="center">150613</td>
+<td align="right">150613</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="getting-ready" class="section level2">
+<h2><span style="color:green">Getting ready</span></h2>
+<p>First, we load the <span style="color:blue">dada2</span> package on your RStudio. if you do not already have it, see the <a href="https://benjjneb.github.io/dada2/dada-installation.html">dada2 installation instructions</a>.</p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## Loading required package: Rcpp</code></pre>
+<pre><code>## [1] &#39;1.13.1&#39;</code></pre>
+<p>Define the path variable so that it points to the extracted directory on your computer or cluster:</p>
+<pre class="r"><code>MY_HOME &lt;- Sys.getenv(&quot;HOME&quot;)
+data &lt;- paste(MY_HOME, &quot;/dada2_tutorial_dog/dog_samples&quot;, sep=&#39;&#39;)  # change the path
+list.files(data)</code></pre>
+<pre><code>##  [1] &quot;Dog1_R1.fastq&quot;  &quot;Dog1_R2.fastq&quot;  &quot;Dog10_R1.fastq&quot; &quot;Dog10_R2.fastq&quot;
+##  [5] &quot;Dog15_R1.fastq&quot; &quot;Dog15_R2.fastq&quot; &quot;Dog16_R1.fastq&quot; &quot;Dog16_R2.fastq&quot;
+##  [9] &quot;Dog17_R1.fastq&quot; &quot;Dog17_R2.fastq&quot; &quot;Dog2_R1.fastq&quot;  &quot;Dog2_R2.fastq&quot; 
+## [13] &quot;Dog22_R1.fastq&quot; &quot;Dog22_R2.fastq&quot; &quot;Dog23_R1.fastq&quot; &quot;Dog23_R2.fastq&quot;
+## [17] &quot;Dog24_R1.fastq&quot; &quot;Dog24_R2.fastq&quot; &quot;Dog29_R1.fastq&quot; &quot;Dog29_R2.fastq&quot;
+## [21] &quot;Dog3_R1.fastq&quot;  &quot;Dog3_R2.fastq&quot;  &quot;Dog30_R1.fastq&quot; &quot;Dog30_R2.fastq&quot;
+## [25] &quot;Dog31_R1.fastq&quot; &quot;Dog31_R2.fastq&quot; &quot;Dog8_R1.fastq&quot;  &quot;Dog8_R2.fastq&quot; 
+## [29] &quot;Dog9_R1.fastq&quot;  &quot;Dog9_R2.fastq&quot;  &quot;filtered&quot;</code></pre>
+<p>#<code>{r} #MY_HOME &lt;- getwd() #data &lt;- paste(MY_HOME, &quot;/dog_samples&quot;, sep='')  # change the path #list.files(data) #</code> If the package successfully loaded and your listed files match those here, you are ready to go through the DADA2 pipeline. &lt;br&gt;&lt;br&gt;</p>
+<p>Now, we read in the names of the fastq files, and perform some string manipulation to get matched lists of the forward and reverse fastq files.</p>
+<pre class="r"><code># Forward and reverse fastq filenames have format: SAMPLENAME_R1.fastq and SAMPLENAME_R2.fastq
+fnFs &lt;- sort(list.files(data, pattern=&quot;_R1.fastq&quot;, full.names = TRUE))
+fnRs &lt;- sort(list.files(data, pattern=&quot;_R2.fastq&quot;, full.names = TRUE))
+
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+sample.names &lt;- sapply(strsplit(basename(fnFs), &quot;_&quot;), `[`, 1)
+sample.names</code></pre>
+<pre><code>##  [1] &quot;Dog1&quot;  &quot;Dog10&quot; &quot;Dog15&quot; &quot;Dog16&quot; &quot;Dog17&quot; &quot;Dog2&quot;  &quot;Dog22&quot; &quot;Dog23&quot;
+##  [9] &quot;Dog24&quot; &quot;Dog29&quot; &quot;Dog3&quot;  &quot;Dog30&quot; &quot;Dog31&quot; &quot;Dog8&quot;  &quot;Dog9&quot;</code></pre>
+</div>
+<div id="quality-control-on-the-raw-data" class="section level2">
+<h2><span style="color:green">1. Quality Control on the raw data</span></h2>
+<p>We start by visualizing the quality profiles of the forward reads:</p>
+<pre class="r"><code>plotQualityProfile(fnFs[1:2])</code></pre>
+<p><img src="16S-rRNA-pipeline-using-DADA2_files/figure-html/unnamed-chunk-4-1.png" width="672" /> &lt;br&gt;&lt;br&gt;</p>
+<p>We start by visualizing the quality profiles of the Reverse reads:</p>
+<pre class="r"><code>plotQualityProfile(fnRs[1:2])</code></pre>
+<p><img src="16S-rRNA-pipeline-using-DADA2_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><br/><br/></p>
+</div>
+<div id="filter-and-trim-the-raw-data" class="section level2">
+<h2><span style="color:green">2. Filter and trim the raw data</span></h2>
+<p>We assign the filenames for the filtered fastq.gz files:</p>
+<pre class="r"><code># Place filtered files in filtered/ subdirectory
+filtFs &lt;- file.path(data, &quot;filtered&quot;, paste0(sample.names, &quot;_F_filt.fastq.gz&quot;))
+filtRs &lt;- file.path(data, &quot;filtered&quot;, paste0(sample.names, &quot;_R_filt.fastq.gz&quot;))
+names(filtFs) &lt;- sample.names
+names(filtRs) &lt;- sample.names</code></pre>
+<pre class="r"><code>out &lt;- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+head(out)</code></pre>
+<pre><code>##                reads.in reads.out
+## Dog1_R1.fastq    118343    113501
+## Dog10_R1.fastq    79342     76839
+## Dog15_R1.fastq   131483    122917
+## Dog16_R1.fastq   114424    109530
+## Dog17_R1.fastq    99610     95439
+## Dog2_R1.fastq    108679    104449</code></pre>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

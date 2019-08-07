@@ -1,0 +1,11 @@
+name: "16S Tutorial" 
+output_dir: "docs" 
+navbar:
+  title: "16S Tutorial"
+  left:
+    - text: "General Information"
+      href: index.html
+    - text: "Tutorial"
+      href: speed-and-distance.html 
+output:
+  html_document:
