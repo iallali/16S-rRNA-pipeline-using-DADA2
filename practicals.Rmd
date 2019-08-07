@@ -1,0 +1,7 @@
+---
+title: "Practicals"
+author: 'Instructors: Imane Allali'
+output: html_document
+---
+
+TEst

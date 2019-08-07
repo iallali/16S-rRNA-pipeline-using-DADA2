@@ -7,5 +7,7 @@ navbar:
       href: index.html
     - text: "Tutorial"
       href: 16S-rRNA-pipeline-using-DADA2.html
+    - text: "Practicals"
+      href: practicals.html
 output:
   html_document:
