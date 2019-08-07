@@ -4,9 +4,7 @@ author: 'Instructors: Imane Allali'
 ---
 
 
-
-
-<br/><br/>
+Mamana
 
 ## <span style="color:green">General Information</span>
 The material of taught in this module was developed by [Benjamin Callahan](https://github.com/benjjneb).
