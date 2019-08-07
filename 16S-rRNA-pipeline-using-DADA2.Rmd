@@ -1,0 +1,137 @@
+---
+title: "16S-rRNA-pipeline-using-DADA2"
+author: 'Instructors: Imane Allali'
+output: html_document
+---
+
+
+
+ 
+ 
+### Instructors: Imane Allali
+<br/><br/>
+
+## <span style="color:green">General Information</span>
+The material of taught in this module was developed by [Benjamin Callahan](https://github.com/benjjneb).
+
+**Who** : The course is aimed at Master, PhD students, and other researchers.
+
+**When** : beginning of September 2019.
+
+**Requirements**: Participants must have access to R or RStudio via their own computer or cluster.
+git status
+**Contact** : Please email allali.imane@gmail.com for more information.
+<br/><br/>
+
+#### Prerequisities
+You should have your access to R and RStudio via your own compute or cluster.
+<br/><br/>
+
+#### Outcomes
+1.
+2.
+3.
+<br/><br/>
+
+#### When you get lost or something is unclear
+1. Please find someone next to you that looks like they know what they are doing.
+2. Ask the teacher assistant.
+3. Let me know.
+<br/><br/>
+ 
+## <span style="color:green">The dataset</span>
+The dataset we will be working are the practice dataset from the [H3ABioNet 16S rDNA diversity analysis SOP](https://h3abionet.github.io/H3ABionet-SOPs/16s-rRNA-1-0.html). The source data can be accessed [here](http://h3data.cbio.uct.ac.za/assessments/16SrRNADiversityAnalysis/practice) but for our purposes it is already on the cluster.
+
+The table below contains the metadata associated with the dog stool samples. There are three dogs which are treated with increased percentage of a compound in their diet: 5 different treatments (0-4, representing an increased percentage of a compound in their diet).
+
+
+| Sample  | Dog    | Treatment  | Read Counts r1  | Read Counts r2 |
+| :-------| :----: | :--------: | :-------------: | ----------:    | 
+|  Dog1   | B      | 2          |  118343         | 118343         |
+|  Dog2   | G      | 3          |  108679	        | 108679         | 
+|  Dog3   | K      | 3          |  101482         | 101482         | 
+|  Dog8   | B      | 4          |  108731         | 108731         | 
+|  Dog9   | G      | 0          |  109500         | 109500         | 
+|  Dog10  | K      | 4          |  79342          | 79342          | 
+|  Dog15  | B      | 1          |  131483         | 131483         | 
+|  Dog16  | G      | 4          |  114424         | 114424         | 
+|  Dog17  | K      | 0          |  99610	        | 99610	         | 
+|  Dog22  | B      | 3          |  145029         | 145029         | 
+|  Dog23  | G      | 1          |  193158         | 193158         | 
+|  Dog24  | K      | 2          |  162487         | 162487         | 
+|  Dog29  | B      | 0          |  122776         | 122776         | 
+|  Dog30  | G      | 2          |  137315         | 137315         | 
+|  Dog31  | K      | 1          |  150613         | 150613         | 
+
+## <span style="color:green">Getting ready</span>
+First, we load the <span style="color:blue">dada2</span> package on your RStudio. if you do not already have it, see the [dada2 installation instructions](https://benjjneb.github.io/dada2/dada-installation.html).
+
+```{r}
+library(dada2); packageVersion("dada2")
+```
+
+
+Define the path variable so that it points to the extracted directory on your computer or cluster:
+
+```{r}
+MY_HOME <- Sys.getenv("HOME")
+data <- paste(MY_HOME, "/dada2_tutorial_dog/dog_samples", sep='')  # change the path
+list.files(data)
+```
+
+
+
+#```{r}
+#MY_HOME <- getwd()
+#data <- paste(MY_HOME, "/dog_samples", sep='')  # change the path
+#list.files(data)
+#```
+If the package successfully loaded and your listed files match those here, you are ready to go through the DADA2 pipeline.
+<br\><br\>
+
+Now, we read in the names of the fastq files, and perform some string manipulation to get matched lists of the forward and reverse fastq files.
+```{r}
+# Forward and reverse fastq filenames have format: SAMPLENAME_R1.fastq and SAMPLENAME_R2.fastq
+fnFs <- sort(list.files(data, pattern="_R1.fastq", full.names = TRUE))
+fnRs <- sort(list.files(data, pattern="_R2.fastq", full.names = TRUE))
+
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+sample.names
+```
+
+
+## <span style="color:green">1. Quality Control on the raw data</span>
+We start by visualizing the quality profiles of the forward reads:
+
+```{r}
+plotQualityProfile(fnFs[1:2])
+```
+<br\><br\>
+
+We start by visualizing the quality profiles of the Reverse reads:
+
+```{r}
+plotQualityProfile(fnRs[1:2])
+```
+
+<br/><br/>
+
+## <span style="color:green">2. Filter and trim the raw data</span>
+We assign the filenames for the filtered fastq.gz files:
+
+```{r}
+# Place filtered files in filtered/ subdirectory
+filtFs <- file.path(data, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(data, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+```
+
+
+```{r}
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+head(out)
+```
