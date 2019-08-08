@@ -30,6 +30,8 @@ The table below contains the metadata associated with the dog stool samples. The
 |  Dog30  | G      | 2          |  137315         | 137315         | 
 |  Dog31  | K      | 1          |  150613         | 150613         | 
 
+<br/><br/>
+
 ## <span style="color:green">Getting ready</span>
 First, we load the <span style="color:blue">dada2</span> package on your RStudio. if you do not already have it, see the [dada2 installation instructions](https://benjjneb.github.io/dada2/dada-installation.html).
 
@@ -47,16 +49,11 @@ list.files(data)
 ```
 
 
-
-#```{r}
-#MY_HOME <- getwd()
-#data <- paste(MY_HOME, "/dog_samples", sep='')  # change the path
-#list.files(data)
-#```
 If the package successfully loaded and your listed files match those here, you are ready to go through the DADA2 pipeline.
-<br\><br\>
+<br/><br/>
 
 Now, we read in the names of the fastq files, and perform some string manipulation to get matched lists of the forward and reverse fastq files.
+
 ```{r}
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1.fastq and SAMPLENAME_R2.fastq
 fnFs <- sort(list.files(data, pattern="_R1.fastq", full.names = TRUE))
@@ -67,20 +64,25 @@ sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 sample.names
 ```
 
+<br/><br/>
 
 ## <span style="color:green">1. Quality Control on the raw data</span>
 We start by visualizing the quality profiles of the forward reads:
 
 ```{r}
-plotQualityProfile(fnFs[1:2])
+plotQualityProfile(fnFs[1:3])
 ```
-<br\><br\>
+
+<br/><br/>
 
 We start by visualizing the quality profiles of the Reverse reads:
 
 ```{r}
-plotQualityProfile(fnRs[1:2])
+plotQualityProfile(fnRs[1:3])
 ```
+
+<br/><br/>
+Here, we have only the quality plot for three fastq files you can more plots to the figure.
 
 <br/><br/>
 
@@ -95,10 +97,106 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 ```
 
+For the filtering, we will use these parameters:
+**maxN = 0** (DADA2 requeris no Ns), **truncQ=2**, **rm.phix=TRUE**, **maxEE=2** (it is the maximum number of expected errors allowed in a read), **truncLen(270, 210)** (it depends on the quality of your reads).
 
 ```{r}
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(270,200),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
               compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)
 ```
+
+<br/><br/>
+
+## <span style="color:green">3. Learn the Error Rates</span>
+
+```{r}
+errF <- learnErrors(filtFs, multithread=TRUE)
+```
+
+```{r}
+errR <- learnErrors(filtRs, multithread=TRUE)
+```
+
+```{r}
+plotErrors(errF, nominalQ=TRUE)
+```
+
+
+<br/><br/>
+
+## <span style="color:green">4. Sample Inference</span>
+
+```{r}
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+```
+
+```{r}
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+```
+
+```{r}
+dadaFs[[1]]
+```
+
+
+<br/><br/>
+
+## <span style="color:green">5. Merge Paired Reads</span>
+
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+# Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+
+<br/><br/>
+
+## <span style="color:green">6. Construct sequence Table</span>
+
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+```{r}
+# Inspect distribution of sequence lengths
+table(nchar(getSequences(seqtab)))
+```
+
+<br/><br/>
+
+## <span style="color:green">7. Remove Chimeras</span>
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+```
+
+```{r}
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+<br/><br/>
+
+## <span style="color:green">8. Track Reads through the Pipeline</span>
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+head(track)
+```
+
+<br/><br/>
+
+## <span style="color:green">9. Assign Taxonomy</span>
+
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, paste(MY_HOME, "/dada2_tutorial_dog/silva_nr_v132_train_set.fa.gz", sep=''), multithread=TRUE) # change the path
+#data <- paste(MY_HOME, "/dada2_tutorial_dog/dog_samples", sep='')  
+```
+
