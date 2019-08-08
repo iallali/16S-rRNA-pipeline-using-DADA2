@@ -1,1 +1,20 @@
-Mamana Mbiyavanga
+---
+title: "16S-rRNA-pipeline-using-DADA2"
+author: 'Instructors: Imane Allali'
+---
+
+
+Mamana Mbiyavanga kjanajkdasdbakjdbajdkbadkja
+
+## <span style="color:green">General Information</span>
+The material of taught in this module was developed by [Benjamin Callahan](https://github.com/benjjneb).
+
+**Who** : The course is aimed at Master, PhD students, and other researchers.
+
+**When** : beginning of September 2019.
+
+**Requirements**: Participants must have access to R or RStudio via their own computer or cluster.
+git status
+**Contact** : Please email allali.imane@gmail.com for more information.
+<br/><br/>
+
