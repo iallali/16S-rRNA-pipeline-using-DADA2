@@ -11,7 +11,7 @@ The material of taught in this module was developed by [Benjamin Callahan](https
 
 **Who** : The course is aimed at Master, PhD students, and other researchers.
 
-**When** : beginning of September 2019.
+**When** : From 28 September to 25 November 2021.
 
 **Requirements**: Participants must have access to R or RStudio via their own computer or cluster.
 
