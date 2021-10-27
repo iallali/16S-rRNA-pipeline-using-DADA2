@@ -24,9 +24,10 @@ You should have your access to R and RStudio via your own compute or cluster.
 <br/><br/>
 
 #### Outcomes
-1.
-2.
-3.
+1. Understand each step of 16S rRNA analysis pipeline using DADA2
+2. Run 16S rRNA analysis pipeline from raw reads
+3. Know how to edit files and use command line
+4. Choose the best approach and tools to analyze your data
 <br/><br/>
 
 #### When you get lost or something is unclear
